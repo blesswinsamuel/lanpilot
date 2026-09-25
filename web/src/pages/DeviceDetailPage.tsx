@@ -81,7 +81,7 @@ export function DeviceDetailPage() {
   const { ip } = useParams<{ ip: string }>()
   const { devices, isRefreshing, period } = useRootOutletContext()
 
-  const [chartScope, setChartScope] = useState<'total' | 'wan' | 'lan'>('total')
+  const [chartScope, setChartScope] = useState<'total' | 'wan' | 'lan'>('wan')
   const [loading, setLoading] = useState(true)
   const [historyData, setHistoryData] = useState<{ time: string; download: number; upload: number }[]>([])
   const [fetchedDevice, setFetchedDevice] = useState<Device | null>(null)

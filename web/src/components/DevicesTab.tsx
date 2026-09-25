@@ -50,7 +50,7 @@ export function DevicesTab({ devices }: DevicesTabProps) {
   const [selectedInterface, setSelectedInterface] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'offline'>('all')
   const [selectedTag, setSelectedTag] = useState<string>('all')
-  const [trafficScope, setTrafficScope] = useState<'total' | 'wan' | 'lan' | 'split'>('total')
+  const [trafficScope, setTrafficScope] = useState<'total' | 'wan' | 'lan' | 'split'>('wan')
   const [showUnknownOnly, setShowUnknownOnly] = useState(false)
   const [selectedDeviceIp, setSelectedDeviceIp] = useState<string | null>(null)
   const [showCharts, setShowCharts] = useState(true)
