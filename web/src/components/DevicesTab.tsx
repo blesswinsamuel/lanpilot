@@ -9,7 +9,6 @@ import {
   HelpCircle,
   Globe,
   HardDrive,
-  PieChart as PieChartIcon,
   XCircle,
   Power,
   Pencil,
@@ -53,7 +52,6 @@ export function DevicesTab({ devices }: DevicesTabProps) {
   const [trafficScope, setTrafficScope] = useState<'total' | 'wan' | 'lan' | 'split'>('wan')
   const [showUnknownOnly, setShowUnknownOnly] = useState(false)
   const [selectedDeviceIp, setSelectedDeviceIp] = useState<string | null>(null)
-  const [showCharts, setShowCharts] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingDevice, setEditingDevice] = useState<Device | null>(null)
   const [wakingMacs, setWakingMacs] = useState<Record<string, 'loading' | 'success' | 'error'>>({})
@@ -198,15 +196,13 @@ export function DevicesTab({ devices }: DevicesTabProps) {
 
   return (
     <div className="space-y-6">
-      {showCharts && (
-        <DeviceTrafficCharts
-          devices={activeDeviceList}
-          trafficScope={trafficScope}
-          selectedDeviceIp={selectedDeviceIp}
-          onSelectDevice={setSelectedDeviceIp}
-          period={period}
-        />
-      )}
+      <DeviceTrafficCharts
+        devices={activeDeviceList}
+        trafficScope={trafficScope}
+        selectedDeviceIp={selectedDeviceIp}
+        onSelectDevice={setSelectedDeviceIp}
+        period={period}
+      />
 
       <Card>
         <CardHeader className="space-y-4">
@@ -221,15 +217,6 @@ export function DevicesTab({ devices }: DevicesTabProps) {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCharts((prev) => !prev)}
-                className="h-9 text-xs gap-1.5 shrink-0"
-              >
-                <PieChartIcon className="w-3.5 h-3.5 text-primary" />
-                <span>{showCharts ? 'Hide Charts' : 'Show Charts'}</span>
-              </Button>
               <Button
                 size="sm"
                 onClick={() => {

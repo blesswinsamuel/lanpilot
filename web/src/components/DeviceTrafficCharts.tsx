@@ -8,7 +8,6 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card'
 import { Badge } from './ui/badge'
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs'
 import { formatBytes, formatRate, formatPercent, formatChartTime } from '@/lib/format'
 import { rpcClient } from '@/lib/client'
 import { getPeriodRange, type Period } from '@/lib/period'
@@ -78,7 +77,6 @@ export const DeviceTrafficCharts = React.memo(function DeviceTrafficCharts({
   onSelectDevice,
   period = '1d',
 }: DeviceTrafficChartsProps) {
-  const [viewMode, setViewMode] = useState<'both' | 'donut' | 'trends'>('both')
   const [historyLoading, setHistoryLoading] = useState(false)
   const [timeseriesData, setTimeseriesData] = useState<DeviceTimeSeriesEntry[]>([])
 
@@ -310,22 +308,6 @@ export const DeviceTrafficCharts = React.memo(function DeviceTrafficCharts({
               </CardDescription>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="shrink-0">
-              <TabsList className="h-7 text-xs">
-                <TabsTrigger value="both" className="text-[11px] px-2 py-0.5">
-                  Split View
-                </TabsTrigger>
-                <TabsTrigger value="donut" className="text-[11px] px-2 py-0.5">
-                  Distribution
-                </TabsTrigger>
-                <TabsTrigger value="trends" className="text-[11px] px-2 py-0.5">
-                  Throughput
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
         </div>
       </CardHeader>
 
@@ -333,17 +315,16 @@ export const DeviceTrafficCharts = React.memo(function DeviceTrafficCharts({
         <div
           className={cn(
             'grid gap-6',
-            viewMode === 'both' ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1'
+            'grid-cols-1 lg:grid-cols-12'
           )}
         >
           {/* LEFT: Donut Chart & Device Share Breakdown */}
-          {(viewMode === 'both' || viewMode === 'donut') && (
-            <div
-              className={cn(
-                'flex flex-col md:flex-row items-center gap-6 p-4 rounded-lg border bg-muted/20',
-                viewMode === 'both' ? 'lg:col-span-5' : 'col-span-1'
-              )}
-            >
+          <div
+            className={cn(
+              'flex flex-col md:flex-row items-center gap-6 p-4 rounded-lg border bg-muted/20',
+              'lg:col-span-5'
+            )}
+          >
               {/* Donut Chart with center total */}
               <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
@@ -482,16 +463,14 @@ export const DeviceTrafficCharts = React.memo(function DeviceTrafficCharts({
                 })}
               </div>
             </div>
-          )}
 
           {/* RIGHT: Top Devices Timeseries Bandwidth Chart */}
-          {(viewMode === 'both' || viewMode === 'trends') && (
-            <div
-              className={cn(
-                'space-y-3 p-4 rounded-lg border bg-muted/20 flex flex-col justify-between',
-                viewMode === 'both' ? 'lg:col-span-7' : 'col-span-1'
-              )}
-            >
+          <div
+            className={cn(
+              'space-y-3 p-4 rounded-lg border bg-muted/20 flex flex-col justify-between',
+              'lg:col-span-7'
+            )}
+          >
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <Activity className="w-3.5 h-3.5 text-primary" />
@@ -637,8 +616,7 @@ export const DeviceTrafficCharts = React.memo(function DeviceTrafficCharts({
                 })}
               </div>
             </div>
-          )}
-        </div>
+          </div>
       </CardContent>
     </Card>
   )
