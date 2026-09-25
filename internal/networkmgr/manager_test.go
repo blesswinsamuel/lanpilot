@@ -68,7 +68,7 @@ func TestNetworkMgr_RenderFiles(t *testing.T) {
 		t.Fatalf("ReadFile dhcp-hosts failed: %v", err)
 	}
 	dhcpStr := string(dhcpData)
-	if !strings.Contains(dhcpStr, "tag:trusted,aa:bb:cc:dd:ee:01,10.100.1.20,appletv,living-room-appletv") {
+	if !strings.Contains(dhcpStr, "tag:trusted,aa:bb:cc:dd:ee:01,10.100.1.20,appletv") {
 		t.Errorf("missing expected appletv entry in dhcp-hosts: %s", dhcpStr)
 	}
 	if !strings.Contains(dhcpStr, "tag:cameras,aa:bb:cc:dd:ee:02,10.100.3.10,camera-front") {

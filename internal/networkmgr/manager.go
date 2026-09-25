@@ -179,11 +179,18 @@ func (m *Manager) renderAndReloadLocked() error {
 		if dev.MAC == "" || dev.IP == "" {
 			continue
 		}
-		hostnames := dev.Hostnames
-		if len(hostnames) == 0 && dev.Name != "" {
-			hostnames = []string{dev.Name}
+		var primaryHostname string
+		if len(dev.Hostnames) > 0 {
+			primaryHostname = dev.Hostnames[0]
+		} else if dev.Name != "" {
+			primaryHostname = dev.Name
 		}
-		entry := fmt.Sprintf("%s,%s,%s", dev.MAC, dev.IP, strings.Join(hostnames, ","))
+		var entry string
+		if primaryHostname != "" {
+			entry = fmt.Sprintf("%s,%s,%s", dev.MAC, dev.IP, primaryHostname)
+		} else {
+			entry = fmt.Sprintf("%s,%s", dev.MAC, dev.IP)
+		}
 		if dev.Vlan != "" {
 			entry = fmt.Sprintf("tag:%s,%s", dev.Vlan, entry)
 		}
