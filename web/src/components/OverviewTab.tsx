@@ -679,8 +679,8 @@ export function OverviewTab({
                             />
                           }
                         />
-                        <Area type="monotone" dataKey="download" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#wanDlGrad)" />
-                        <Area type="monotone" dataKey="upload" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#wanUlGrad)" />
+                        <Area type="monotone" dataKey="download" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#wanDlGrad)" isAnimationActive={false} />
+                        <Area type="monotone" dataKey="upload" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#wanUlGrad)" isAnimationActive={false} />
                       </AreaChart>
                     </ChartContainer>
                   )}
@@ -738,8 +738,8 @@ export function OverviewTab({
                             />
                           }
                         />
-                        <Area type="monotone" dataKey="download" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#lanDlGrad)" />
-                        <Area type="monotone" dataKey="upload" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#lanUlGrad)" />
+                        <Area type="monotone" dataKey="download" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#lanDlGrad)" isAnimationActive={false} />
+                        <Area type="monotone" dataKey="upload" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#lanUlGrad)" isAnimationActive={false} />
                       </AreaChart>
                     </ChartContainer>
                   )}
@@ -849,6 +849,7 @@ export function OverviewTab({
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#singleDlGrad)"
+                      isAnimationActive={false}
                     />
                     <Area
                       type="monotone"
@@ -857,6 +858,7 @@ export function OverviewTab({
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#singleUlGrad)"
+                      isAnimationActive={false}
                     />
                     <ChartLegend content={<ChartLegendContent className="text-xs pt-3" />} />
                   </AreaChart>
@@ -944,6 +946,7 @@ export function OverviewTab({
                             outerRadius={70}
                             paddingAngle={2}
                             stroke="transparent"
+                            isAnimationActive={false}
                           >
                             {wanPieData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -1169,6 +1172,7 @@ export function OverviewTab({
                             outerRadius={70}
                             paddingAngle={2}
                             stroke="transparent"
+                            isAnimationActive={false}
                           >
                             {lanPieData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />

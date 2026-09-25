@@ -6,23 +6,43 @@ export function isPeriod(val: string | null): val is Period {
   return val === '15m' || val === '1h' || val === '6h' || val === '1d' || val === '3d' || val === '7d'
 }
 
-export function getPeriodRange(period: Period): { fromUnix: number; toUnix: number; stepSeconds: number } {
-  const now = Math.floor(Date.now() / 1000)
-  switch (period) {
-    case '15m':
-      return { fromUnix: now - 900, toUnix: now, stepSeconds: 5 }
-    case '1h':
-      return { fromUnix: now - 3600, toUnix: now, stepSeconds: 15 }
-    case '6h':
-      return { fromUnix: now - 21600, toUnix: now, stepSeconds: 60 }
-    case '1d':
-      return { fromUnix: now - 86400, toUnix: now, stepSeconds: 300 }
-    case '3d':
-      return { fromUnix: now - 259200, toUnix: now, stepSeconds: 900 }
-    case '7d':
-      return { fromUnix: now - 604800, toUnix: now, stepSeconds: 1800 }
-    default:
-      return { fromUnix: now - 86400, toUnix: now, stepSeconds: 300 }
+export function calculateStepSeconds(durationSeconds: number, maxPoints = 100): number {
+  // Common clean step intervals (seconds) >= TSDB 15s sample interval
+  const buckets = [15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600, 7200, 14400, 28800, 86400]
+  for (const b of buckets) {
+    if (durationSeconds / b <= maxPoints) {
+      return b
+    }
   }
+  return Math.max(15, Math.ceil(durationSeconds / maxPoints))
 }
 
+export function getPeriodRange(period: Period, maxPoints = 100): { fromUnix: number; toUnix: number; stepSeconds: number } {
+  const now = Math.floor(Date.now() / 1000)
+  let duration = 86400
+  switch (period) {
+    case '15m':
+      duration = 900
+      break
+    case '1h':
+      duration = 3600
+      break
+    case '6h':
+      duration = 21600
+      break
+    case '1d':
+      duration = 86400
+      break
+    case '3d':
+      duration = 259200
+      break
+    case '7d':
+      duration = 604800
+      break
+  }
+  return {
+    fromUnix: now - duration,
+    toUnix: now,
+    stepSeconds: calculateStepSeconds(duration, maxPoints),
+  }
+}

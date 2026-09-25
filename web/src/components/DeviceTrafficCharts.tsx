@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   PieChart as PieChartIcon,
   Activity,
@@ -71,7 +71,7 @@ interface DeviceTimeSeriesEntry {
   [ip: string]: number | string
 }
 
-export function DeviceTrafficCharts({
+export const DeviceTrafficCharts = React.memo(function DeviceTrafficCharts({
   devices,
   trafficScope,
   selectedDeviceIp,
@@ -161,10 +161,11 @@ export function DeviceTrafficCharts({
 
   // 2. Fetch timeseries telemetry for top devices (top 5 for readable chart)
   const timeseriesDevices = useMemo(() => topDevices.slice(0, 5), [topDevices])
-  const topIps = useMemo(() => timeseriesDevices.map((d) => d.ip), [timeseriesDevices])
+  const topIpsKey = useMemo(() => timeseriesDevices.map((d) => d.ip).join(','), [timeseriesDevices])
 
   const fetchTimeseries = useCallback(async () => {
-    if (topIps.length === 0) {
+    const currentIps = topIpsKey ? topIpsKey.split(',') : []
+    if (currentIps.length === 0) {
       setTimeseriesData([])
       return
     }
@@ -181,7 +182,7 @@ export function DeviceTrafficCharts({
       }
 
       // Query ingress & egress rates for all top IPs in a single batch RPC
-      const queries = topIps.map((ip) => ({
+      const queries = currentIps.map((ip) => ({
         metricName,
         matchLabels: { ip },
       }))
@@ -195,7 +196,7 @@ export function DeviceTrafficCharts({
 
       // Map IP -> Map<timestamp, totalRate>
       const ipMaps = new Map<string, Map<number, number>>()
-      for (const ip of topIps) {
+      for (const ip of currentIps) {
         ipMaps.set(ip, new Map())
       }
 
@@ -217,7 +218,7 @@ export function DeviceTrafficCharts({
             const d = new Date(ts * 1000)
             const timeStr = formatChartTime(d, period)
             entry = { time: timeStr, timestamp: ts }
-            for (const otherIp of topIps) {
+            for (const otherIp of currentIps) {
               entry[otherIp] = 0
             }
             mergedMap.set(ts, entry)
@@ -233,7 +234,7 @@ export function DeviceTrafficCharts({
     } finally {
       setHistoryLoading(false)
     }
-  }, [topIps, scopeKey, period])
+  }, [topIpsKey, scopeKey, period])
 
   useEffect(() => {
     fetchTimeseries()
@@ -389,6 +390,7 @@ export function DeviceTrafficCharts({
                       outerRadius={70}
                       paddingAngle={2}
                       stroke="transparent"
+                      isAnimationActive={false}
                       onClick={(entry) => {
                         const payload = entry?.payload as DeviceSliceData | undefined
                         if (payload?.ip && onSelectDevice) {
@@ -601,6 +603,7 @@ export function DeviceTrafficCharts({
                             strokeOpacity={isDimmed ? 0.3 : 1}
                             fillOpacity={isDimmed ? 0.05 : 1}
                             fill={`url(#${gradId})`}
+                            isAnimationActive={false}
                           />
                         )
                       })}
@@ -639,4 +642,4 @@ export function DeviceTrafficCharts({
       </CardContent>
     </Card>
   )
-}
+})

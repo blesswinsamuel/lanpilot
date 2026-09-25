@@ -774,6 +774,7 @@ export function DeviceDetailPage() {
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#dev-detail-dl-grad)"
+                    isAnimationActive={false}
                   />
                   <Area
                     type="monotone"
@@ -783,6 +784,7 @@ export function DeviceDetailPage() {
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#dev-detail-ul-grad)"
+                    isAnimationActive={false}
                   />
                   <ChartLegend content={<ChartLegendContent className="text-xs pt-3" />} />
                 </AreaChart>

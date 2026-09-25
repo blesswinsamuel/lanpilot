@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Outlet, NavLink, useOutletContext, useSearchParams } from 'react-router-dom'
 import { Header } from './Header'
 import { rpcClient } from '@/lib/client'
@@ -46,8 +46,8 @@ export function RootLayout() {
   const [error, setError] = useState<string | null>(null)
 
   // Fetch all snapshot data (devices, flows, health, overview, ddns) for the current period
-  const fetchAllData = useCallback(async () => {
-    setIsRefreshing(true)
+  const fetchAllData = useCallback(async (isManual = false) => {
+    if (isManual) setIsRefreshing(true)
     try {
       const { fromUnix: from, toUnix: to } = getPeriodRange(period)
       const [ov, dev, hl, ddnsRes] = await Promise.all([
@@ -71,21 +71,25 @@ export function RootLayout() {
       console.error('Failed to fetch lanpilot data:', err)
       setError(err?.message || 'Failed to connect to lanpilot service')
     } finally {
-      setIsRefreshing(false)
+      if (isManual) setIsRefreshing(false)
     }
   }, [period])
 
   // Initial load and periodic snapshot refresh every 15s (matching TSDB sample interval)
   useEffect(() => {
-    fetchAllData()
-    const interval = setInterval(fetchAllData, 15000)
+    fetchAllData(false)
+    const interval = setInterval(() => fetchAllData(false), 15000)
     return () => clearInterval(interval)
   }, [fetchAllData])
 
-  const isConnected = !error && !!overview
-  const { fromUnix, toUnix } = getPeriodRange(period)
+  const handleManualRefresh = useCallback(() => {
+    return fetchAllData(true)
+  }, [fetchAllData])
 
-  const outletContext: RootOutletContext = {
+  const isConnected = !error && !!overview
+  const { fromUnix, toUnix } = useMemo(() => getPeriodRange(period), [period])
+
+  const outletContext: RootOutletContext = useMemo(() => ({
     overview,
     devices,
     health,
@@ -93,12 +97,25 @@ export function RootLayout() {
     isLive: isConnected,
     isRefreshing,
     error,
-    fetchAllData,
+    fetchAllData: handleManualRefresh,
     period,
     setPeriod: handlePeriodChange,
     fromUnix,
     toUnix,
-  }
+  }), [
+    overview,
+    devices,
+    health,
+    ddns,
+    isConnected,
+    isRefreshing,
+    error,
+    handleManualRefresh,
+    period,
+    handlePeriodChange,
+    fromUnix,
+    toUnix,
+  ])
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -108,7 +125,7 @@ export function RootLayout() {
         isLive={isConnected}
         internetIsUp={overview ? overview.internetIsUp : true}
         internetStatus={overview?.internetStatus}
-        onRefresh={fetchAllData}
+        onRefresh={handleManualRefresh}
         isRefreshing={isRefreshing}
         period={period}
         onPeriodChange={handlePeriodChange}
@@ -205,7 +222,7 @@ export function RootLayout() {
           <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center justify-between">
             <span>Connection error: {error}. Check if lanpilot is running on the router.</span>
             <button
-              onClick={fetchAllData}
+              onClick={handleManualRefresh}
               className="underline font-semibold hover:opacity-80 ml-4 cursor-pointer"
             >
               Retry

@@ -510,6 +510,7 @@ export function InternetHealthTab({ health }: InternetHealthTabProps) {
                         strokeWidth={2}
                         dot={false}
                         name={key}
+                        isAnimationActive={false}
                       />
                     )
                   })}

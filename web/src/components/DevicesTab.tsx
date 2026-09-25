@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useDeferredValue } from 'react'
 import {
   Search,
   Laptop,
@@ -22,7 +22,6 @@ import { Input } from './ui/input'
 import { Badge } from './ui/badge'
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import { cn } from '@/lib/utils'
 import { DeviceTrafficCharts } from './DeviceTrafficCharts'
 import { EditDeviceModal } from './EditDeviceModal'
@@ -47,6 +46,7 @@ interface DevicesTabProps {
 export function DevicesTab({ devices }: DevicesTabProps) {
   const { period, fetchAllData } = useRootOutletContext()
   const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search)
   const [selectedInterface, setSelectedInterface] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'offline'>('all')
   const [selectedTag, setSelectedTag] = useState<string>('all')
@@ -174,8 +174,8 @@ export function DevicesTab({ devices }: DevicesTabProps) {
         return false
       }
 
-      if (!search.trim()) return true
-      const q = search.toLowerCase()
+      if (!deferredSearch.trim()) return true
+      const q = deferredSearch.toLowerCase()
       return (
         d.hostname?.toLowerCase().includes(q) ||
         d.configName?.toLowerCase().includes(q) ||
@@ -189,7 +189,7 @@ export function DevicesTab({ devices }: DevicesTabProps) {
         d.vendor?.toLowerCase().includes(q)
       )
     })
-  }, [activeDeviceList, currentInterface, statusFilter, selectedTag, showUnknownOnly, search, selectedDeviceIp])
+  }, [activeDeviceList, currentInterface, statusFilter, selectedTag, showUnknownOnly, deferredSearch, selectedDeviceIp])
 
   const totalDl = activeDeviceList.reduce((acc, d) => acc + Number(d.total?.downloadBytes || 0), 0)
   const totalUl = activeDeviceList.reduce((acc, d) => acc + Number(d.total?.uploadBytes || 0), 0)
@@ -594,80 +594,66 @@ export function DevicesTab({ devices }: DevicesTabProps) {
                           </TableCell>
                         )}
                         <TableCell>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex flex-col items-start gap-1 cursor-default">
-                                {status === 'active' && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[11px] border-emerald-500/20 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                  >
-                                    Active
-                                  </Badge>
-                                )}
-                                {status === 'static' && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[11px] border-sky-500/20 bg-sky-500/15 text-sky-600 dark:text-sky-400"
-                                  >
-                                    Static
-                                  </Badge>
-                                )}
-                                {status === 'unreachable' && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-[11px] border-amber-500/20 bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                                  >
-                                    <span className="flex items-center gap-1">
-                                      Unreachable
-                                      <HelpCircle className="w-2.5 h-2.5 opacity-60" />
-                                    </span>
-                                  </Badge>
-                                )}
-                                {status === 'offline' && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-[11px] text-muted-foreground bg-muted"
-                                  >
-                                    Offline
-                                  </Badge>
-                                )}
-                                {(status === 'active' || status === 'static') && firstSeen > 0 && (
-                                  <span className="text-[10px] text-muted-foreground font-mono">
-                                    First seen {formatRelativeTime(firstSeen)}
-                                  </span>
-                                )}
-                                {(status === 'offline' || status === 'unreachable') && lastSeen > 0 && (
-                                  <span className="text-[10px] text-muted-foreground font-mono">
-                                    Last seen {formatRelativeTime(lastSeen)}
-                                  </span>
-                                )}
-                              </div>
-                            </TooltipTrigger>
-                            {hasSeenInfo && (
-                              <TooltipContent side="top" className="text-xs flex flex-col gap-1 py-1.5 px-2.5 shadow-md">
-                                {status === 'unreachable' && (
-                                  <span className="text-[11px] text-background/80 pb-0.5 border-b border-background/20">
-                                    ARP probe sent, but no response received
-                                  </span>
-                                )}
-                                {lastSeen > 0 && (
-                                  <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                                    <span className="text-background/70 font-sans">Last seen:</span>
-                                    <span className="font-semibold">{formatRelativeTime(lastSeen)}</span>
-                                    <span className="text-background/60 text-[10px]">({formatDateTime(lastSeen)})</span>
-                                  </div>
-                                )}
-                                {firstSeen > 0 && (
-                                  <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                                    <span className="text-background/70 font-sans">First seen:</span>
-                                    <span className="font-semibold">{formatRelativeTime(firstSeen)}</span>
-                                    <span className="text-background/60 text-[10px]">({formatDateTime(firstSeen)})</span>
-                                  </div>
-                                )}
-                              </TooltipContent>
+                          <div
+                            className="flex flex-col items-start gap-1 cursor-default"
+                            title={
+                              hasSeenInfo
+                                ? [
+                                    status === 'unreachable' ? 'ARP probe sent, but no response received' : '',
+                                    lastSeen > 0 ? `Last seen: ${formatRelativeTime(lastSeen)} (${formatDateTime(lastSeen)})` : '',
+                                    firstSeen > 0 ? `First seen: ${formatRelativeTime(firstSeen)} (${formatDateTime(firstSeen)})` : '',
+                                  ]
+                                    .filter(Boolean)
+                                    .join('\n')
+                                : undefined
+                            }
+                          >
+                            {status === 'active' && (
+                              <Badge
+                                variant="outline"
+                                className="text-[11px] border-emerald-500/20 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              >
+                                Active
+                              </Badge>
                             )}
-                          </Tooltip>
+                            {status === 'static' && (
+                              <Badge
+                                variant="outline"
+                                className="text-[11px] border-sky-500/20 bg-sky-500/15 text-sky-600 dark:text-sky-400"
+                              >
+                                Static
+                              </Badge>
+                            )}
+                            {status === 'unreachable' && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[11px] border-amber-500/20 bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                              >
+                                <span className="flex items-center gap-1">
+                                  Unreachable
+                                  <HelpCircle className="w-2.5 h-2.5 opacity-60" />
+                                </span>
+                              </Badge>
+                            )}
+                            {status === 'offline' && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[11px] text-muted-foreground bg-muted"
+                              >
+                                Offline
+                              </Badge>
+                            )}
+                            {(status === 'active' || status === 'static') && firstSeen > 0 && (
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                First seen {formatRelativeTime(firstSeen)}
+                              </span>
+                            )}
+                            {(status === 'offline' || status === 'unreachable') && lastSeen > 0 && (
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                Last seen {formatRelativeTime(lastSeen)}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
 
                         {trafficScope !== 'split' ? (
@@ -777,54 +763,44 @@ export function DevicesTab({ devices }: DevicesTabProps) {
 
                         <TableCell className="text-right p-0 pr-2">
                           <div className="flex items-center justify-end gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setEditingDevice(device)
-                                    setModalOpen(true)
-                                  }}
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="left" className="text-xs">
-                                {device.configName ? 'Edit DHCP Reservation & Tags' : 'Add DHCP Reservation'}
-                              </TooltipContent>
-                            </Tooltip>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              title={device.configName ? 'Edit DHCP Reservation & Tags' : 'Add DHCP Reservation'}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setEditingDevice(device)
+                                setModalOpen(true)
+                              }}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
 
                             {device.macAddr && device.macAddr !== '00:00:00:00:00:00' && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
-                                    onClick={(e) => handleQuickWol(e, device)}
-                                    disabled={wakingMacs[device.macAddr] === 'loading'}
-                                  >
-                                    <Power className={cn(
-                                      "w-3.5 h-3.5",
-                                      wakingMacs[device.macAddr] === 'loading' && "animate-spin text-amber-500",
-                                      wakingMacs[device.macAddr] === 'success' && "text-emerald-500",
-                                      wakingMacs[device.macAddr] === 'error' && "text-destructive"
-                                    )} />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="left" className="text-xs">
-                                  {wakingMacs[device.macAddr] === 'loading'
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                                title={
+                                  wakingMacs[device.macAddr] === 'loading'
                                     ? 'Sending Magic Packet...'
                                     : wakingMacs[device.macAddr] === 'success'
                                     ? 'Magic Packet Sent!'
                                     : wakingMacs[device.macAddr] === 'error'
                                     ? 'Failed to send packet'
-                                    : 'Wake on LAN (Send Magic Packet)'}
-                                </TooltipContent>
-                              </Tooltip>
+                                    : 'Wake on LAN (Send Magic Packet)'
+                                }
+                                onClick={(e) => handleQuickWol(e, device)}
+                                disabled={wakingMacs[device.macAddr] === 'loading'}
+                              >
+                                <Power className={cn(
+                                  "w-3.5 h-3.5",
+                                  wakingMacs[device.macAddr] === 'loading' && "animate-spin text-amber-500",
+                                  wakingMacs[device.macAddr] === 'success' && "text-emerald-500",
+                                  wakingMacs[device.macAddr] === 'error' && "text-destructive"
+                                )} />
+                              </Button>
                             )}
                             <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
                           </div>
