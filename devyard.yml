@@ -17,10 +17,14 @@
 version: "1"
 name: lanpilot
 
+proxy:
+  default_service: web
+
 services:
   web:
     command: bun run dev
     working_dir: ./web
+    port: 9157
     build:
       command: bun install
       working_dir: ./web
