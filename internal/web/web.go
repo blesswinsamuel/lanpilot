@@ -27,15 +27,23 @@ func Handler() http.Handler {
 
 		f, err := sub.Open(path)
 		if err == nil {
+			st, statErr := f.Stat()
+			if statErr == nil && !st.IsDir() {
+				f.Close()
+				fileServer.ServeHTTP(w, r)
+				return
+			}
 			f.Close()
-			fileServer.ServeHTTP(w, r)
-			return
 		}
 
-		// Fallback to index.html for SPA routes
-		r2 := new(http.Request)
-		*r2 = *r
-		r2.URL.Path = "/index.html"
-		fileServer.ServeHTTP(w, r2)
+		// Fallback to index.html for SPA routes. Serve it directly instead of
+		// going through fileServer, which 301-redirects /index.html to "./".
+		index, err := fs.ReadFile(sub, "index.html")
+		if err != nil {
+			http.Error(w, "index.html not found", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write(index)
 	})
 }
