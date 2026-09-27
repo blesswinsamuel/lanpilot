@@ -1,6 +1,7 @@
 package networkmgr
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -190,7 +191,21 @@ func (m *Manager) saveAndApplyLocked() error {
 	return m.renderAndReloadLocked()
 }
 
+// writeIfChanged writes data to path only if the current contents differ and
+// reports whether a write happened.
+func writeIfChanged(path string, data []byte) bool {
+	if existing, err := os.ReadFile(path); err == nil && bytes.Equal(existing, data) {
+		return false
+	}
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		log.Printf("warn: failed writing %s: %v", path, err)
+		return false
+	}
+	return true
+}
+
 func (m *Manager) renderAndReloadLocked() error {
+	changed := false
 	// 1. Render dnsmasq.dhcp-hosts
 	var dhcpHostsLines []string
 	for _, dev := range m.cfg.Devices {
@@ -214,9 +229,7 @@ func (m *Manager) renderAndReloadLocked() error {
 		}
 		dhcpHostsLines = append(dhcpHostsLines, entry)
 	}
-	if err := os.WriteFile(m.dnsmasqDhcpHosts, []byte(strings.Join(dhcpHostsLines, "\n")+"\n"), 0644); err != nil {
-		log.Printf("warn: failed writing %s: %v", m.dnsmasqDhcpHosts, err)
-	}
+	changed = writeIfChanged(m.dnsmasqDhcpHosts, []byte(strings.Join(dhcpHostsLines, "\n")+"\n")) || changed
 
 	// 2. Render dnsmasq.hosts (regular names) and dnsmasq.addresses (wildcard names)
 	var hostsLines []string
@@ -275,12 +288,8 @@ func (m *Manager) renderAndReloadLocked() error {
 			hostsLines = append(hostsLines, fmt.Sprintf("%s\t%s", rec.IP, strings.Join(names, " ")))
 		}
 	}
-	if err := os.WriteFile(m.dnsmasqHosts, []byte(strings.Join(hostsLines, "\n")+"\n"), 0644); err != nil {
-		log.Printf("warn: failed writing %s: %v", m.dnsmasqHosts, err)
-	}
-	if err := os.WriteFile(m.dnsmasqAddresses, []byte(strings.Join(addressLines, "\n")+"\n"), 0644); err != nil {
-		log.Printf("warn: failed writing %s: %v", m.dnsmasqAddresses, err)
-	}
+	changed = writeIfChanged(m.dnsmasqHosts, []byte(strings.Join(hostsLines, "\n")+"\n")) || changed
+	changed = writeIfChanged(m.dnsmasqAddresses, []byte(strings.Join(addressLines, "\n")+"\n")) || changed
 
 	// 3. Render nftables-sets.nft
 	var iotInternetMACs, chromecastMACs, fireMACs, atombergMACs []string
@@ -331,8 +340,10 @@ func (m *Manager) renderAndReloadLocked() error {
 		formatSet("bless_mac_ips", "ip daddr", blessMacIPs),
 	}, "\n")
 
-	if err := os.WriteFile(m.nftablesSets, []byte(setsNFT), 0644); err != nil {
-		log.Printf("warn: failed writing %s: %v", m.nftablesSets, err)
+	changed = writeIfChanged(m.nftablesSets, []byte(setsNFT)) || changed
+
+	if !changed {
+		return nil
 	}
 
 	// 4. Signal dnsmasq SIGHUP
@@ -345,9 +356,11 @@ func (m *Manager) renderAndReloadLocked() error {
 }
 
 func (m *Manager) reloadDnsmasq() {
-	// Attempt pkill -HUP dnsmasq or systemctl kill -s HUP dnsmasq
+	// Attempt pkill -HUP dnsmasq or systemctl kill -s HUP dnsmasq.
+	// --kill-who=main avoids signaling a pre-start control process while
+	// dnsmasq is still starting up, which would abort the start.
 	if _, err := exec.LookPath("systemctl"); err == nil {
-		out, err := exec.Command("systemctl", "kill", "-s", "HUP", "dnsmasq").CombinedOutput()
+		out, err := exec.Command("systemctl", "kill", "--kill-who=main", "-s", "HUP", "dnsmasq").CombinedOutput()
 		if err == nil {
 			log.Printf("info: successfully sent SIGHUP to dnsmasq via systemctl")
 			return
