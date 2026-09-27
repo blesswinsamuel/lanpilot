@@ -65,12 +65,21 @@ jobs:
           slack-webhook: ${{ secrets.SLACK_WEBHOOK }}
           docker-build-platforms: linux/amd64
 
-      - name: Create release tarball
+      - name: Setup Bun
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: oven-sh/setup-bun@v2
+      - name: Build web frontend
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: |
-          docker create --platform linux/amd64 ghcr.io/${{ github.repository }} > /tmp/container_id
-          docker cp $(cat /tmp/container_id):/bin/lanpilot ./lanpilot
-          chmod +x lanpilot
+          cd web
+          bun install --frozen-lockfile
+          bun run build
+          mkdir -p ../internal/web/dist
+          cp -r dist/* ../internal/web/dist/
+      - name: Build linux amd64 binary
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o lanpilot ./cmd/lanpilot
           tar czf lanpilot-amd64-linux.tar.gz lanpilot
 
       - name: Create github release
