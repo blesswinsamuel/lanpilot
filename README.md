@@ -70,6 +70,7 @@ http://<router-host>:9156/metrics
 | `DEVICES_CONFIG_PATH` | Path to the managed device inventory (`devices.yaml`) | `/var/lib/lanpilot/devices.yaml` |
 | `DNSMASQ_DHCP_HOSTS_PATH` | dnsmasq DHCP hosts file rendered from the device inventory | — |
 | `DNSMASQ_HOSTS_PATH` | dnsmasq hosts file rendered from managed DNS records | — |
+| `DNSMASQ_ADDRESSES_PATH` | dnsmasq config file rendered from wildcard DNS records (`address=` lines) | — |
 | `NFTABLES_SETS_PATH` | nftables sets file rendered from the device inventory | — |
 | `DOMAIN_SUFFIX` | Search domain used for device hostnames | empty |
 | `DDNS_ENABLED` | Enable dynamic DNS updates | auto |

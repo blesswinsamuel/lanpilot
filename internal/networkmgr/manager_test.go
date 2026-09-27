@@ -62,6 +62,17 @@ func TestNetworkMgr_RenderFiles(t *testing.T) {
 		t.Fatalf("UpsertDnsRecord failed: %v", err)
 	}
 
+	err = mgr.UpsertDnsRecord(DnsRecord{
+		Name:    "homelab-ingress",
+		IP:      "10.100.20.220",
+		Aliases: []string{"*.home.bless.win."},
+	})
+	if err != nil {
+		t.Fatalf("UpsertDnsRecord (wildcard) failed: %v", err)
+	}
+
+	addressesPath := filepath.Join(tmpDir, "dnsmasq.addresses")
+
 	// 3. Verify dhcp-hosts file content
 	dhcpData, err := os.ReadFile(dhcpHostsPath)
 	if err != nil {
@@ -86,6 +97,22 @@ func TestNetworkMgr_RenderFiles(t *testing.T) {
 	}
 	if !strings.Contains(hostsStr, "10.100.1.200\tphotos photos.home.lan immich.home.lan") {
 		t.Errorf("missing expected photos record in hosts: %s", hostsStr)
+	}
+	if !strings.Contains(hostsStr, "10.100.20.220\thomelab-ingress") {
+		t.Errorf("missing expected homelab-ingress record in hosts: %s", hostsStr)
+	}
+	if strings.Contains(hostsStr, "*.home.bless.win") {
+		t.Errorf("wildcard alias should not be rendered into hosts file: %s", hostsStr)
+	}
+
+	// 4b. Verify dnsmasq.addresses file content
+	addressesData, err := os.ReadFile(addressesPath)
+	if err != nil {
+		t.Fatalf("ReadFile addresses failed: %v", err)
+	}
+	addressesStr := string(addressesData)
+	if strings.Count(addressesStr, "address=/home.bless.win/10.100.20.220") != 1 {
+		t.Errorf("expected exactly one wildcard address entry: %s", addressesStr)
 	}
 
 	// 5. Verify nftables sets file content

@@ -39,12 +39,24 @@ type DevicesConfig struct {
 	DnsRecords []DnsRecord `yaml:"dns_records" json:"dns_records"`
 }
 
+// isWildcardName reports whether a DNS name is a wildcard (e.g. "*.home.bless.win").
+func isWildcardName(name string) bool {
+	return strings.HasPrefix(name, "*.")
+}
+
+// wildcardDomain strips the leading "*." and trailing dot from a wildcard name,
+// returning the domain to use in a dnsmasq address=/domain/ip entry.
+func wildcardDomain(name string) string {
+	return strings.TrimSuffix(strings.TrimPrefix(strings.TrimSpace(name), "*."), ".")
+}
+
 type Manager struct {
 	mu                  sync.RWMutex
 	cfg                 DevicesConfig
 	devicesPath         string
 	dnsmasqDhcpHosts    string
 	dnsmasqHosts        string
+	dnsmasqAddresses    string
 	nftablesSets        string
 	searchDomain        string
 	isApplying          bool
@@ -55,6 +67,7 @@ type Options struct {
 	DevicesPath          string
 	DnsmasqDhcpHostsPath string
 	DnsmasqHostsPath     string
+	DnsmasqAddressesPath string
 	NftablesSetsPath     string
 	SearchDomain         string
 }
@@ -80,6 +93,10 @@ func NewManager(opts Options) (*Manager, error) {
 	if hosts == "" {
 		hosts = filepath.Join(stateDir, "dnsmasq.hosts")
 	}
+	addresses := opts.DnsmasqAddressesPath
+	if addresses == "" {
+		addresses = filepath.Join(stateDir, "dnsmasq.addresses")
+	}
 	nftSets := opts.NftablesSetsPath
 	if nftSets == "" {
 		nftSets = filepath.Join(stateDir, "nftables-sets.nft")
@@ -97,6 +114,7 @@ func NewManager(opts Options) (*Manager, error) {
 		devicesPath:      devicesPath,
 		dnsmasqDhcpHosts: dhcpHosts,
 		dnsmasqHosts:     hosts,
+		dnsmasqAddresses: addresses,
 		nftablesSets:     nftSets,
 		searchDomain:     domain,
 	}
@@ -200,17 +218,38 @@ func (m *Manager) renderAndReloadLocked() error {
 		log.Printf("warn: failed writing %s: %v", m.dnsmasqDhcpHosts, err)
 	}
 
-	// 2. Render dnsmasq.hosts
+	// 2. Render dnsmasq.hosts (regular names) and dnsmasq.addresses (wildcard names)
 	var hostsLines []string
+	var addressLines []string
+	seenAddresses := map[string]bool{}
+
+	addAddress := func(rawName, ip string) {
+		domain := wildcardDomain(rawName)
+		if domain == "" {
+			return
+		}
+		line := fmt.Sprintf("address=/%s/%s", domain, ip)
+		if seenAddresses[line] {
+			log.Printf("warn: duplicate dns address entry %s; ignoring", line)
+			return
+		}
+		seenAddresses[line] = true
+		addressLines = append(addressLines, line)
+	}
+
 	for _, dev := range m.cfg.Devices {
 		if dev.IP == "" {
 			continue
 		}
 		var names []string
 		for _, h := range dev.Hostnames {
+			if isWildcardName(h) {
+				addAddress(h, dev.IP)
+				continue
+			}
 			names = append(names, h)
 		}
-		if len(names) == 0 && dev.Name != "" {
+		if len(names) == 0 && dev.Name != "" && !isWildcardName(dev.Name) {
 			names = append(names, dev.Name)
 		}
 		if len(names) > 0 {
@@ -222,11 +261,15 @@ func (m *Manager) renderAndReloadLocked() error {
 			continue
 		}
 		var names []string
-		if rec.Name != "" {
-			names = append(names, rec.Name)
-		}
-		for _, alias := range rec.Aliases {
-			names = append(names, alias)
+		for _, name := range append([]string{rec.Name}, rec.Aliases...) {
+			if name == "" {
+				continue
+			}
+			if isWildcardName(name) {
+				addAddress(name, rec.IP)
+				continue
+			}
+			names = append(names, name)
 		}
 		if len(names) > 0 {
 			hostsLines = append(hostsLines, fmt.Sprintf("%s\t%s", rec.IP, strings.Join(names, " ")))
@@ -234,6 +277,9 @@ func (m *Manager) renderAndReloadLocked() error {
 	}
 	if err := os.WriteFile(m.dnsmasqHosts, []byte(strings.Join(hostsLines, "\n")+"\n"), 0644); err != nil {
 		log.Printf("warn: failed writing %s: %v", m.dnsmasqHosts, err)
+	}
+	if err := os.WriteFile(m.dnsmasqAddresses, []byte(strings.Join(addressLines, "\n")+"\n"), 0644); err != nil {
+		log.Printf("warn: failed writing %s: %v", m.dnsmasqAddresses, err)
 	}
 
 	// 3. Render nftables-sets.nft

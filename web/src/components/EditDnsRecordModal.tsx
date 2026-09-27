@@ -149,9 +149,12 @@ export function EditDnsRecordModal({ isOpen, onClose, record, onSaved }: EditDns
 
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">Aliases / FQDNs</label>
-            <p className="text-[10px] text-muted-foreground mb-1.5">Comma-separated alternative names for this IP</p>
+            <p className="text-[10px] text-muted-foreground mb-1.5">
+              Comma-separated alternative names for this IP. Names starting with <code className="font-mono">*.</code> are
+              rendered as wildcard <code className="font-mono">address=</code> entries matching the domain and all subdomains.
+            </p>
             <Input
-              placeholder="photos.home.lan, immich.home.lan"
+              placeholder="photos.home.lan, *.home.bless.win"
               value={aliasesStr}
               onChange={(e) => setAliasesStr(e.target.value)}
               className="font-mono text-xs"

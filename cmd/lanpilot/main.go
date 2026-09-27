@@ -271,6 +271,7 @@ func main() {
 		DevicesPath:          os.Getenv("DEVICES_CONFIG_PATH"),
 		DnsmasqDhcpHostsPath: os.Getenv("DNSMASQ_DHCP_HOSTS_PATH"),
 		DnsmasqHostsPath:     os.Getenv("DNSMASQ_HOSTS_PATH"),
+		DnsmasqAddressesPath: os.Getenv("DNSMASQ_ADDRESSES_PATH"),
 		NftablesSetsPath:     os.Getenv("NFTABLES_SETS_PATH"),
 		SearchDomain:         os.Getenv("DOMAIN_SUFFIX"),
 	})
