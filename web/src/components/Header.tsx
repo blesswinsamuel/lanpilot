@@ -55,7 +55,7 @@ export function Header({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="font-semibold text-sm leading-none tracking-tight">Lanpilot</h1>
+              <h1 className="font-semibold text-sm leading-none tracking-tight">LAN Pilot</h1>
               {isLive ? (
                 <Badge variant="outline" className="flex items-center gap-1.5 text-[11px] py-0 px-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-normal">
                   <span className="relative flex h-1.5 w-1.5">

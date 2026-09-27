@@ -236,7 +236,7 @@ export function RootLayout() {
       </main>
 
       <footer className="border-t py-4 text-center text-xs text-muted-foreground">
-        Lanpilot &copy; <span className="font-mono">{new Date().getFullYear()}</span> • Connect-RPC over gRPC-Web • Pure-Go SQLite TSDB
+        LAN Pilot &copy; <span className="font-mono">{new Date().getFullYear()}</span> • Connect-RPC over gRPC-Web • Pure-Go SQLite TSDB
       </footer>
     </div>
   )
