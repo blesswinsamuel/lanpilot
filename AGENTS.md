@@ -71,7 +71,6 @@ web/                          # React SPA frontend (Vite, Tailwind, shadcn/ui, C
     components/               # Domain-specific UI tabs and header
     gen/                      # Generated TypeScript protobuf/Connect code (do not edit)
     lib/                      # Connect-RPC client and utilities
-dashboard/                    # Grafana dashboard source & generated JSON
 Taskfile.yaml                 # Task runner commands
 ```
 

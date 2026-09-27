@@ -1,6 +1,6 @@
-# Lanpilot
+# LAN Pilot
 
-Lanpilot is a lightweight LAN control plane and observability daemon for Linux routers and gateways. It manages DHCP and DNS (dnsmasq), keeps DNS records in sync with dynamic WAN IPs, discovers and inventories LAN devices, and monitors traffic and internet reachability — all from a single binary with an embedded web dashboard.
+LAN Pilot is a lightweight LAN control plane and observability daemon for Linux routers and gateways. It manages DHCP and DNS (dnsmasq), keeps DNS records in sync with dynamic WAN IPs, discovers and inventories LAN devices, and monitors traffic and internet reachability — all from a single binary with an embedded web dashboard.
 
 ![Screenshot 1](https://github.com/blesswinsamuel/lanpilot/assets/815723/25391261-ecb0-438a-a1b3-9c61af3f3434)
 ![Screenshot 2](https://github.com/blesswinsamuel/lanpilot/assets/815723/1dd72a04-1c39-489c-9a55-0227a6e026e4)
@@ -80,7 +80,7 @@ http://<router-host>:9156/metrics
 
 ## Dashboard
 
-The Grafana dashboard source is in `dashboard/lanpilot-dashboard.ts` and generates `dashboard/lanpilot-dashboard.json`. The embedded web dashboard is served at `http://<router-host>:9156/`.
+The Grafana dashboard source lives in the [grafana-dashboards](https://github.com/blesswinsamuel/grafana-dashboards) repo (`dashboards/lanpilot.ts`). The embedded web dashboard is served at `http://<router-host>:9156/`.
 
 ## Development
 
