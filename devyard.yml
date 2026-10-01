@@ -2,10 +2,10 @@
 #
 # Usage (from repo root):
 #
-#   devyard up          # foreground; Ctrl-C stops
-#   devyard up -d       # detached
+#   devyard start -f    # foreground; Ctrl-C stops
+#   devyard start       # detached
 #   devyard logs -f
-#   devyard down
+#   devyard stop
 #
 # Tasks:
 #   devyard run generate
@@ -14,20 +14,17 @@
 #   devyard run stop
 #   devyard run test
 
-version: "1"
 name: lanpilot
-
-proxy:
-  default_service: web
+primary: web
 
 services:
   web:
-    command: bun run dev
-    working_dir: ./web
+    run: bun run dev
+    dir: ./web
     port: 9157
     build:
-      command: bun install
-      working_dir: ./web
+      run: bun install
+      sources: [web/package.json, web/bun.lock]
     restart: always
 
 tasks:
